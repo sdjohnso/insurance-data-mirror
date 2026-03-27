@@ -1,0 +1,59 @@
+name: Update NFIP Data
+
+on:
+  schedule:
+    # Monthly on the 1st at 6 AM EST (11 AM UTC)
+    - cron: '0 11 1 * *'
+  workflow_dispatch:
+
+jobs:
+  update-nfip:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Initialize database
+        working-directory: scripts
+        run: python init_db.py
+
+      - name: Fetch NFIP data
+        working-directory: scripts
+        run: python fetch_nfip.py
+
+      - name: Run estimation tests
+        working-directory: scripts
+        run: python test_estimates.py
+
+      - name: Commit updated database
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add db/insurance.db
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update NFIP data $(date +%Y-%m-%d)"
+            git push
+          fi
+
+      - name: Summary
+        run: |
+          echo "## NFIP Data Update" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Updated NFIP flood insurance aggregates for Pitt County ZIP codes." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**ZIP codes:** 27834, 27835, 27858, 27828, 27829, 27837, 27863, 27880, 27886" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Run date:** $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY

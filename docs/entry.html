@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insurance Data Mirror - DP-3 Rate Entry</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --border: #334155;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 2rem;
+            max-width: 960px;
+            margin: 0 auto;
+        }
+        h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+        .subtitle { color: var(--muted); font-size: 0.875rem; margin-bottom: 2rem; }
+        .info-banner {
+            background: #1e3a5f;
+            border: 1px solid #2563eb;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 2rem;
+            font-size: 0.875rem;
+        }
+        .info-banner strong { color: var(--warning); }
+        .info-banner a { color: var(--accent); }
+        section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        h2 { font-size: 1.125rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .form-group { display: flex; flex-direction: column; gap: 0.25rem; }
+        .form-group.full { grid-column: 1 / -1; }
+        label { font-size: 0.8rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+        input, select, textarea {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            color: var(--text);
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+        }
+        textarea { resize: vertical; min-height: 80px; }
+        .btn {
+            padding: 0.6rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-secondary { background: var(--border); color: var(--text); }
+        .actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        th { text-align: left; color: var(--muted); font-weight: 500; padding: 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.75rem; text-transform: uppercase; }
+        td { padding: 0.5rem; border-bottom: 1px solid var(--border); }
+        td input { width: 100%; }
+        .rate-case-flag { display: flex; align-items: center; gap: 0.5rem; }
+        .rate-case-flag input[type="checkbox"] { width: 18px; height: 18px; }
+        #output {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+        }
+        .links { display: flex; gap: 1.5rem; margin-bottom: 2rem; font-size: 0.875rem; }
+        .links a { color: var(--accent); text-decoration: none; }
+        .links a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>Insurance Data Mirror - DP-3 Rate Entry</h1>
+    <p class="subtitle">Pitt County, NC - Dwelling insurance rate reference data</p>
+
+    <div class="links">
+        <a href="https://www.ncrb.org/" target="_blank">NC Rate Bureau</a>
+        <a href="https://www.ncdoi.gov/press-releases" target="_blank">NCDOI Press Releases</a>
+        <a href="https://www.fema.gov/api/open/v2/FimaNfipPolicies" target="_blank">OpenFEMA API</a>
+        <a href="https://www.ncdoi.gov/insurance-industry/property-and-casualty-insurance/rate-bureau/dwelling-rates" target="_blank">NCDOI Dwelling Rates Info</a>
+    </div>
+
+    <div class="info-banner">
+        <strong>Pending Rate Case:</strong> NCRB filed 68.3% average dwelling rate increase Oct 30, 2025. NCDOI hearing <strong>May 4, 2026</strong>. Outcome pending.
+        <br>Review material: <a href="https://www.ncdoi.gov/insurance-industry/property-and-casualty-insurance/rate-bureau/dwelling-rates" target="_blank">NCDOI Dwelling Rate Filing Info</a>
+    </div>
+
+    <section>
+        <h2>Base Annual Premiums</h2>
+        <table>
+            <thead>
+                <tr><th>Property Type</th><th>Base Annual Premium (Mid)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Single Family Detached</td><td><input type="number" id="rate_sfd" value="1600" step="50"></td></tr>
+                <tr><td>Attached Fee-Simple Townhome</td><td><input type="number" id="rate_th" value="1550" step="50"></td></tr>
+                <tr><td>Condo Unit</td><td><input type="number" id="rate_condo" value="650" step="50"></td></tr>
+                <tr><td>Vacant / Flip</td><td><input type="number" id="rate_vacant" value="2100" step="50"></td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>Age Bracket Multipliers</h2>
+        <table>
+            <thead>
+                <tr><th>Age Bracket</th><th>Multiplier</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Pre-1980</td><td><input type="number" id="mult_pre1980" value="1.70" step="0.05" min="0.5" max="3.0"></td></tr>
+                <tr><td>1980s</td><td><input type="number" id="mult_1980s" value="1.40" step="0.05" min="0.5" max="3.0"></td></tr>
+                <tr><td>1990s</td><td><input type="number" id="mult_1990s" value="1.15" step="0.05" min="0.5" max="3.0"></td></tr>
+                <tr><td>2000s</td><td><input type="number" id="mult_2000s" value="1.00" step="0.05" min="0.5" max="3.0"></td></tr>
+                <tr><td>2010s</td><td><input type="number" id="mult_2010s" value="0.85" step="0.05" min="0.5" max="3.0"></td></tr>
+                <tr><td>2020+</td><td><input type="number" id="mult_2020p" value="0.70" step="0.05" min="0.5" max="3.0"></td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>CRS Flood Discounts (Pitt County)</h2>
+        <table>
+            <thead>
+                <tr><th>Flood Zone Category</th><th>Discount %</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>AE Zone (SFHA)</td><td><input type="number" id="crs_ae" value="10" step="1" min="0" max="45"></td></tr>
+                <tr><td>X, B, C Zones</td><td><input type="number" id="crs_xbc" value="5" step="1" min="0" max="45"></td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>Rate Case Tracking</h2>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Pending Rate Case</label>
+                <div class="rate-case-flag">
+                    <input type="checkbox" id="rate_case_pending" checked>
+                    <span>Active filing pending</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Last Verified</label>
+                <input type="date" id="last_verified" value="2026-03-27">
+            </div>
+            <div class="form-group full">
+                <label>Rate Case Details</label>
+                <textarea id="rate_case_details">NCRB filed 68.3% average dwelling rate increase October 30, 2025. NCDOI hearing May 4, 2026. Outcome pending.</textarea>
+            </div>
+            <div class="form-group full">
+                <label>Source Citation</label>
+                <input type="text" id="source_citation" value="North Carolina Rate Bureau dwelling rate filing 2023 settlement, verified March 2026">
+            </div>
+        </div>
+    </section>
+
+    <div class="actions">
+        <button class="btn btn-primary" onclick="generateSQL()">Generate SQL</button>
+        <button class="btn btn-secondary" onclick="copyOutput()">Copy to Clipboard</button>
+    </div>
+
+    <pre id="output"></pre>
+
+    <script>
+        function generateSQL() {
+            const verified = document.getElementById('last_verified').value;
+            const source = document.getElementById('source_citation').value.replace(/'/g, "''");
+            const pending = document.getElementById('rate_case_pending').checked ? 1 : 0;
+            const details = document.getElementById('rate_case_details').value.replace(/'/g, "''");
+
+            let sql = `-- Generated: ${new Date().toISOString()}\n`;
+            sql += `-- Source: ${document.getElementById('source_citation').value}\n\n`;
+
+            sql += `-- Base annual premiums\n`;
+            sql += `UPDATE dp3_base_rates SET base_annual_premium_mid = ${document.getElementById('rate_sfd').value}, last_verified = '${verified}', source_citation = '${source}', updated_at = datetime('now') WHERE property_type = 'single_family_detached';\n`;
+            sql += `UPDATE dp3_base_rates SET base_annual_premium_mid = ${document.getElementById('rate_th').value}, last_verified = '${verified}', source_citation = '${source}', updated_at = datetime('now') WHERE property_type = 'attached_townhome';\n`;
+            sql += `UPDATE dp3_base_rates SET base_annual_premium_mid = ${document.getElementById('rate_condo').value}, last_verified = '${verified}', source_citation = '${source}', updated_at = datetime('now') WHERE property_type = 'condo_unit';\n`;
+            sql += `UPDATE dp3_base_rates SET base_annual_premium_mid = ${document.getElementById('rate_vacant').value}, last_verified = '${verified}', source_citation = '${source}', updated_at = datetime('now') WHERE property_type = 'vacant_flip';\n\n`;
+
+            sql += `-- Age bracket multipliers\n`;
+            sql += `UPDATE dp3_age_multipliers SET multiplier = ${document.getElementById('mult_pre1980').value}, updated_at = datetime('now') WHERE age_bracket = 'pre_1980';\n`;
+            sql += `UPDATE dp3_age_multipliers SET multiplier = ${document.getElementById('mult_1980s').value}, updated_at = datetime('now') WHERE age_bracket = '1980s';\n`;
+            sql += `UPDATE dp3_age_multipliers SET multiplier = ${document.getElementById('mult_1990s').value}, updated_at = datetime('now') WHERE age_bracket = '1990s';\n`;
+            sql += `UPDATE dp3_age_multipliers SET multiplier = ${document.getElementById('mult_2000s').value}, updated_at = datetime('now') WHERE age_bracket = '2000s';\n`;
+            sql += `UPDATE dp3_age_multipliers SET multiplier = ${document.getElementById('mult_2010s').value}, updated_at = datetime('now') WHERE age_bracket = '2010s';\n`;
+            sql += `UPDATE dp3_age_multipliers SET multiplier = ${document.getElementById('mult_2020p').value}, updated_at = datetime('now') WHERE age_bracket = '2020_plus';\n\n`;
+
+            sql += `-- CRS discounts\n`;
+            sql += `UPDATE crs_discounts SET discount_percentage = ${document.getElementById('crs_ae').value}, updated_at = datetime('now') WHERE flood_zone_category = 'AE';\n`;
+            sql += `UPDATE crs_discounts SET discount_percentage = ${document.getElementById('crs_xbc').value}, updated_at = datetime('now') WHERE flood_zone_category = 'X_B_C';\n\n`;
+
+            sql += `-- Rate case\n`;
+            sql += `UPDATE dp3_rate_case SET pending_rate_case = ${pending}, rate_case_details = '${details}', last_verified = '${verified}', source_citation = '${source}', updated_at = datetime('now') WHERE id = 1;\n`;
+
+            const output = document.getElementById('output');
+            output.textContent = sql;
+            output.style.display = 'block';
+        }
+
+        function copyOutput() {
+            const text = document.getElementById('output').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.querySelector('.btn-secondary');
+                btn.textContent = 'Copied!';
+                setTimeout(() => { btn.textContent = 'Copy to Clipboard'; }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

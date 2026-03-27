@@ -1,0 +1,70 @@
+name: Monitor NCDOI Rate Case
+
+on:
+  schedule:
+    # Weekly Monday at 8 AM EST (1 PM UTC)
+    - cron: '0 13 * * 1'
+  workflow_dispatch:
+
+jobs:
+  check-ncdoi:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check NCDOI for rate case updates
+        id: check
+        run: |
+          echo "Checking NCDOI for dwelling rate case updates..."
+
+          # Fetch NCDOI press releases page
+          RESPONSE=$(curl -s -o /tmp/ncdoi.html -w "%{http_code}" \
+            "https://www.ncdoi.gov/press-releases" \
+            --max-time 30 || echo "000")
+
+          if [ "$RESPONSE" != "200" ]; then
+            echo "WARNING: Could not reach NCDOI website (HTTP $RESPONSE)"
+            echo "found=error" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check for rate bureau + dwelling mentions
+          if grep -i -q "rate bureau.*dwelling\|dwelling.*rate bureau" /tmp/ncdoi.html; then
+            echo "ALERT: Found new Rate Bureau dwelling content on NCDOI"
+            echo "found=true" >> $GITHUB_OUTPUT
+            # Extract matching lines for context
+            grep -i "rate bureau.*dwelling\|dwelling.*rate bureau" /tmp/ncdoi.html | head -5 > /tmp/matches.txt
+          else
+            echo "No new Rate Bureau dwelling content found"
+            echo "found=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Report findings
+        run: |
+          echo "## NCDOI Rate Case Monitor" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Check date:** $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.check.outputs.found }}" = "true" ]; then
+            echo "### NEW CONTENT DETECTED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Found mentions of 'Rate Bureau' and 'dwelling' on the NCDOI press releases page." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Action required:** Review https://www.ncdoi.gov/press-releases for updates to the pending NCRB dwelling rate case." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Current tracking:** NCRB filed 68.3% average dwelling rate increase Oct 30, 2025. NCDOI hearing May 4, 2026." >> $GITHUB_STEP_SUMMARY
+            if [ -f /tmp/matches.txt ]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Matched content:**" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              cat /tmp/matches.txt >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+            fi
+          elif [ "${{ steps.check.outputs.found }}" = "error" ]; then
+            echo "Could not reach NCDOI website. Will retry next week." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No new Rate Bureau dwelling content found on NCDOI press releases page." >> $GITHUB_STEP_SUMMARY
+          fi
