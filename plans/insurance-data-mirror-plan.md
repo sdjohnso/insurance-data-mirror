@@ -1,8 +1,8 @@
 # Insurance Data Mirror
 **Branch:** `main`
 **Created:** 2026-03-27
-**Status:** In Progress - Phase 1, Step 1.3
-**Next Action:** Create GitHub repo, push initial code, and deploy entry page via GitHub Pages
+**Status:** In Progress - Phase 2, Step 2.1 (blocked - FEMA API timeout)
+**Next Action:** Retry NFIP fetch when FEMA API is responsive; manually trigger GitHub Actions workflow as alternative
 **Purpose:** Public mirror of Pitt County NC insurance cost data (NFIP flood + DP-3 dwelling rates) for Reilize property analysis
 **Security:** secaudit required before any step touching DB, APIs, endpoints, or user input is marked complete
 
@@ -79,6 +79,7 @@ insurance-data-mirror/
 | 2026-03-27 | Aggregate NFIP data rather than storing raw policies | 72M+ total policies in dataset; raw storage impractical and unnecessary |
 | 2026-03-27 | Entry page generates SQL rather than direct DB writes | Keeps it simple - no backend needed, SQL can be reviewed before execution |
 | 2026-03-27 | Flood fallback uses $1500 AE / $500 X when no NFIP data | Reasonable defaults until real data is pulled |
+| 2026-03-27 | FEMA API timing out; defer live data pull | API returning 503/timeouts on all ZIPs. Estimation works with fallbacks. GitHub Actions will retry monthly. |
 
 ## Phase 1: Foundation (Core Code + Database)
 
@@ -99,14 +100,14 @@ insurance-data-mirror/
   - Validation: Test output matches manual calculation (verified: $3,264.00 for 1965 SFR)
   - DONE - Verified 2026-03-27
 
-- [ ] **Step 1.3: GitHub repo + Pages deployment**
+- [x] **Step 1.3: GitHub repo + Pages deployment**
   - Resources: All project files
-  - [ ] Initialize git repo
-  - [ ] Create GitHub repo (public, matching NCDOT mirror pattern)
-  - [ ] Enable GitHub Pages on docs/ folder
-  - [ ] Push initial commit
-  - Validation: Entry page accessible at GitHub Pages URL
-  - **Next Session Prompt:** I'm on branch `main`. Core code is written and tested. Review `plans/insurance-data-mirror-plan.md` and continue with Step 1.3 - create the GitHub repo and enable Pages.
+  - [x] Initialize git repo
+  - [x] Create GitHub repo (public, matching NCDOT mirror pattern)
+  - [x] Enable GitHub Pages on docs/ folder
+  - [x] Push initial commit
+  - Validation: Entry page accessible at https://sdjohnso.github.io/insurance-data-mirror/entry.html
+  - DONE - Verified 2026-03-27. Repo: https://github.com/sdjohnso/insurance-data-mirror
 
 ## Phase 2: Live Data (NFIP API Pull)
 
@@ -118,6 +119,7 @@ insurance-data-mirror/
   - [ ] Verify aggregates stored correctly
   - [ ] Re-run test_estimates.py to confirm flood estimates use real data
   - Validation: nfip_aggregates table has rows for each ZIP+occupancy combo, flood estimates in test output reflect real averages
+  - **NOTE (2026-03-27):** FEMA API timing out (>120s) and returning 503s. Known issue with OpenFEMA on large dataset. Options: (a) retry later, (b) trigger GitHub Actions workflow, (c) consider OpenFEMA bulk CSV download as alternative. Estimation engine uses fallback flood values ($1500 AE / $500 X) in the meantime.
   - **Next Session Prompt:** I'm on branch `main`. GitHub repo is set up. Review `plans/insurance-data-mirror-plan.md` and continue with Step 2.1 - run the NFIP data fetch.
 
 - [ ] **Step 2.2: Verify GitHub Actions workflows**
@@ -132,10 +134,11 @@ insurance-data-mirror/
 
 **Goal:** Everything documented, reminder set, ready for Reilize integration.
 
-- [ ] **Step 3.1: Set reminder for NCDOI rate case hearing**
-  - [ ] Calendar reminder for May 4, 2026 NCDOI hearing
-  - [ ] Include link to entry page and NCDOI dwelling rates page
+- [x] **Step 3.1: Set reminder for NCDOI rate case hearing**
+  - [x] Calendar reminder for May 4, 2026 NCDOI hearing
+  - [x] Include link to entry page and NCDOI dwelling rates page
   - Validation: Reminder appears on calendar
+  - DONE - Event created on primary calendar (event ID: r90fao2gvfq6u4hp4f1pg9i074)
 
 - [ ] **Step 3.2: Final verification and commit**
   - [ ] Ensure db/insurance.db has both NFIP and DP-3 data
