@@ -15,12 +15,13 @@ from config import (
     OPENFEMA_BASE_URL,
     OPENFEMA_DELAY_SECONDS,
     OPENFEMA_PAGE_SIZE,
+    OPENFEMA_TIMEOUT,
     PITT_COUNTY_ZIPS,
 )
 
 
-def fetch_policies_for_zip(zip_code: str) -> list[dict]:
-    """Fetch all NFIP policies for a given ZIP code with pagination."""
+def fetch_policies_for_zip(zip_code: str, max_retries: int = 3) -> list[dict]:
+    """Fetch all NFIP policies for a given ZIP code with pagination and retry."""
     all_records = []
     skip = 0
     select = ",".join(NFIP_SELECT_FIELDS)
@@ -35,8 +36,22 @@ def fetch_policies_for_zip(zip_code: str) -> list[dict]:
             f"&$count=true"
         )
         print(f"  Fetching ZIP {zip_code} (offset {skip})...")
-        resp = requests.get(url, timeout=60)
-        resp.raise_for_status()
+
+        # Retry logic for FEMA's flaky connections
+        resp = None
+        for attempt in range(1, max_retries + 1):
+            try:
+                resp = requests.get(url, timeout=OPENFEMA_TIMEOUT)
+                resp.raise_for_status()
+                break
+            except (requests.RequestException, requests.ConnectionError) as e:
+                if attempt < max_retries:
+                    wait = 10 * attempt
+                    print(f"    Attempt {attempt} failed, retrying in {wait}s...")
+                    time.sleep(wait)
+                else:
+                    raise
+
         data = resp.json()
 
         records = data.get("FimaNfipPolicies", [])

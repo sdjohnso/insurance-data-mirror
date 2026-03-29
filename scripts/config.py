@@ -11,7 +11,8 @@ SEED_PATH = os.path.join(PROJECT_ROOT, "db", "seed_dp3.sql")
 # OpenFEMA API
 OPENFEMA_BASE_URL = "https://www.fema.gov/api/open/v2/FimaNfipPolicies"
 OPENFEMA_PAGE_SIZE = 1000
-OPENFEMA_DELAY_SECONDS = 1.5  # Rate limiting between requests
+OPENFEMA_TIMEOUT = 300  # FEMA servers are slow - need 5 min timeout
+OPENFEMA_DELAY_SECONDS = 5  # Generous delay between requests
 
 # Pitt County ZIP codes
 PITT_COUNTY_ZIPS = [
